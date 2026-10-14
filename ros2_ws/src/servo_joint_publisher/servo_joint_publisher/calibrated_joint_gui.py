@@ -37,14 +37,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QTimer, QProcess, QProcessEnvironment, pyqtSignal
 from PyQt5.QtGui import QFont, QWindow, QTextCursor, QPainter, QPen, QBrush, QColor, QPainterPath, QRadialGradient, QLinearGradient
 
-try:
-    from .visual_slam_widget import VisualSLAMWidget
-except ImportError:
-    try:
-        from visual_slam_widget import VisualSLAMWidget
-    except ImportError:
-        VisualSLAMWidget = None
-
 if "QT_QPA_PLATFORM_PLUGIN_PATH" in os.environ and "cv2" in os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"]:
     del os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"]
 
@@ -2452,13 +2444,10 @@ class CalibratedJointPublisherGUI(QMainWindow):
 
         self.quard_bot_widget = QuardBotWidget(self)
         self.sensor_node_widget = ESP32SensorNodeWidget(self)
-        self.slam_widget = VisualSLAMWidget(self) if VisualSLAMWidget else None
 
         self.tabs.addTab(control_widget, "🦾 Robot Arm")
         self.tabs.addTab(self.quard_bot_widget, "🤖 Quard Bot")
         self.tabs.addTab(self.sensor_node_widget, "🚀 Rover")
-        if self.slam_widget:
-            self.tabs.addTab(self.slam_widget, "👁️ Visual SLAM")
 
         self.tabs.currentChanged.connect(self.on_tab_changed)
 
@@ -2611,10 +2600,6 @@ class CalibratedJointPublisherGUI(QMainWindow):
             self.lbl_rviz_target.setText(f"{prefix}🚀 Rover")
             self.lbl_rviz_target.setStyleSheet("background-color: #f59e0b; color: #ffffff; padding: 2px 8px; border-radius: 10px;")
             self.log_to_console("📑 Switched to 🚀 Rover Sensor Dashboard.")
-        elif index == 3:
-            self.lbl_rviz_target.setText(f"{prefix}👁️ SLAM")
-            self.lbl_rviz_target.setStyleSheet("background-color: #06b6d4; color: #ffffff; padding: 2px 8px; border-radius: 10px;")
-            self.log_to_console("📑 Switched to 👁️ Visual SLAM (ESP32-CAM & ToF) Dashboard.")
 
         # Ensure embedded RViz window is properly resized
         QTimer.singleShot(50, self._resize_embedded_rviz)
@@ -3023,12 +3008,7 @@ class CalibratedJointPublisherGUI(QMainWindow):
                 self.gesture_process.waitForFinished(1000)
 
     def closeEvent(self, event):
-        """Clean up gesture teleop, SLAM manager, and child processes on dashboard window exit."""
-        if hasattr(self, 'slam_widget') and self.slam_widget:
-            try:
-                self.slam_widget.cleanup()
-            except Exception:
-                pass
+        """Clean up gesture teleop and child processes on dashboard window exit."""
         if hasattr(self, 'rviz_process') and self.rviz_process and self.rviz_process.state() != QProcess.NotRunning:
             try:
                 self.rviz_process.terminate()
